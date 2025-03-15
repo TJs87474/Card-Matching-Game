@@ -100,7 +100,6 @@ class GameState extends ChangeNotifier {
   }
 }
 
-
 class CardGridPage extends StatelessWidget {
   const CardGridPage({super.key});
 
@@ -132,16 +131,37 @@ class CardGridPage extends StatelessWidget {
                 final card = gameState.cards[index];
                 return GestureDetector(
                   onTap: () => gameState.flipCard(index),
-                  child: Container(
-                    width: cardSize, // Set the width dynamically
-                    height: cardSize, // Set the height dynamically
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(card.isFaceUp ? card.frontImage : card.backImage),
-                        fit: BoxFit.cover,
-                      ),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    transitionBuilder: (Widget child, Animation<double> animation) {
+                      // Create flip animation
+                      final rotateAnim = Tween(begin: 0.0, end: pi).animate(animation);
+                      return RotationY(
+                        turns: rotateAnim,
+                        child: child,
+                      );
+                    },
+                    child: card.isFaceUp
+                        ? Container(
+                            key: ValueKey('front-$index'),
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(card.frontImage),
+                                fit: BoxFit.cover,
+                              ),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          )
+                        : Container(
+                            key: ValueKey('back-$index'),
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(card.backImage),
+                                fit: BoxFit.cover,
+                              ),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
                   ),
                 );
               },
@@ -153,4 +173,25 @@ class CardGridPage extends StatelessWidget {
   }
 }
 
+class RotationY extends StatelessWidget {
+  final Widget child;
+  final Animation<double> turns;
 
+  const RotationY({required this.child, required this.turns, Key? key})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: turns,
+      builder: (context, child) {
+        return Transform(
+          transform: Matrix4.rotationY(turns.value),
+          alignment: Alignment.center,
+          child: child,
+        );
+      },
+      child: child,
+    );
+  }
+}
